@@ -1,5 +1,7 @@
 package me.a548.qrdisplay1;
 
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.SystemClock;
@@ -14,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Chronometer;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -56,6 +59,22 @@ public class MainActivity extends AppCompatActivity{
         succClimb = (Switch) findViewById(R.id.succClimb);
         comments = (EditText) findViewById(R.id.comments);
 
+        //Following code allow the app packages to lock task in true kiosk mode
+        // get policy manager
+        DevicePolicyManager myDevicePolicyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+        // get this app package name
+        ComponentName mDPM = new ComponentName(this, MyAdmin.class);
+
+        if (myDevicePolicyManager.isDeviceOwnerApp(this.getPackageName())) {
+            // get this app package name
+            String[] packages = {this.getPackageName()};
+            // mDPM is the admin package, and allow the specified packages to lock task
+            myDevicePolicyManager.setLockTaskPackages(mDPM, packages);
+            startLockTask();
+        } else {
+            Toast.makeText(getApplicationContext(),"Not owner", Toast.LENGTH_LONG).show();
+        }
+
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,34 +85,38 @@ public class MainActivity extends AppCompatActivity{
                 inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
                         InputMethodManager.HIDE_NOT_ALWAYS);
 
-                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                alertDialog.setTitle("Alert");
-                alertDialog.setMessage("Are you sure you want to submit? Tap anywhere outside of this box to go back.");
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "SUBMIT",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                                //Takes all the data collected and stores it as one String
-                                data = etqr.getText().toString() +
-                                        "," + teamNumber.getText().toString() +
-                                        "," + matchNumber.getText().toString() +
-                                        "," + autoGear.isChecked() +
-                                        "," + baseline.isChecked() +
-                                        "," + autoHighGoal.isChecked() +
-                                        "," + teleGear.getText().toString() +
-                                        "," + climbTime.getText().toString() +
-                                        "," + succClimb.isChecked() +
-                                        "," + comments.getText().toString();
+                if(etqr.getText().toString().compareTo("20012477") == 0) {
+                    stopLockTask();
+                }
+                else {
+                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                    alertDialog.setTitle("Alert");
+                    alertDialog.setMessage("Are you sure you want to submit? Tap anywhere outside of this box to go back.");
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "SUBMIT",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                    //Takes all the data collected and stores it as one String
+                                    data = etqr.getText().toString() +
+                                            "," + teamNumber.getText().toString() +
+                                            "," + matchNumber.getText().toString() +
+                                            "," + autoGear.isChecked() +
+                                            "," + baseline.isChecked() +
+                                            "," + autoHighGoal.isChecked() +
+                                            "," + teleGear.getText().toString() +
+                                            "," + climbTime.getText().toString() +
+                                            "," + succClimb.isChecked() +
+                                            "," + comments.getText().toString();
 
-                                //Uses Intent to send that string to DisplayActivity to be converted into a QR code
-                                Intent dataSend = new Intent(MainActivity.this, DisplayActivity.class);
-                                dataSend.putExtra("dat", data);
-                                startActivity(dataSend);
+                                    //Uses Intent to send that string to DisplayActivity to be converted into a QR code
+                                    Intent dataSend = new Intent(MainActivity.this, DisplayActivity.class);
+                                    dataSend.putExtra("dat", data);
+                                    startActivity(dataSend);
 
-                            }
-                        });
-                alertDialog.show();
-
+                                }
+                            });
+                    alertDialog.show();
+                }
             }
         });
 
